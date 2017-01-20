@@ -28,7 +28,8 @@ under the License.
 ## Flink Function Migration from 1.1 to 1.2
 
 As mentioned in the [State documentation]({{ site.baseurl }}/dev/stream/state.html), Flink has two types of state, 
-namely the **keyed** and the **non-keyed** one. Both types are available to both operators and user-defined functions.
+namely **keyed** and **non-keyed** state (also sometimes called **operator** state). 
+Both types are available to both operators and user-defined functions.
 This document will guide you through the process of migrating your Flink-1.1 function code to Flink-1.2 
 (see [Function Code Migration](#function-code-migration)) and will present some important internal changes 
 introduced in Flink-1.2 that concern the deprecation of the aligned window operators from Flink-1.1 
@@ -151,10 +152,10 @@ interface, or the `ListCheckpointed<T extends Serializable>` interface, which is
 In both cases, the non-keyed state is expected to be a `List` of *serializable* objects, independent from each other, 
 thus eligible for redistribution upon rescaling. In other words, these objects are the finest granularity at which 
 non-keyed state can be repartitioned. As an example, if with parallelism 1 the checkpointed state of the `BufferingSink`
-contains elements `(test1, 2)` and `(test2, 2)` when increasing the parallelism to 2, `(test1, 2)` may end up in task 0,
-while `(test2, 2)` will go to task 1. 
+contains elements `(test1, 2)` and `(test2, 2)`, when increasing the parallelism to 2, `(test1, 2)` may end up in task 0,
+while `(test2, 2)` will go to task 1.
 
-More details on the principles behind rescaling of both keyed state and non-keyed state is done can be found in
+More details on the principles behind rescaling of both keyed state and non-keyed state can be found in
 the [State documentation]({{ site.baseurl }}/dev/stream/state.html).
 
 ##### ListCheckpointed
@@ -166,9 +167,9 @@ The `ListCheckpointed` interface requires the implementation of two methods:
     void restoreState(List<T> state) throws Exception;
 
 Their semantics are the same as their counterparts in the old `Checkpointed` interface. The only difference 
-is that now the `snapshotState()` should return a list of objects to checkpoint, as stated earlier, and the 
+is that now `snapshotState()` should return a list of objects to checkpoint, as stated earlier, and
 `restoreState` has to handle this list upon recovery. If the state is not re-partitionable, you can always 
-return a `Collections.singletonList(MY_STATE)` in the `snapshotState()`. The updated code for the `BufferingSink` 
+return a `Collections.singletonList(MY_STATE)` in the `snapshotState()`. The updated code for `BufferingSink` 
 is included below:
 
     public class BufferingSinkListCheckpointed implements 
@@ -293,18 +294,19 @@ are going to be stored upon checkpointing:
 
 `this.checkpointedState = context.getOperatorStateStore().getSerializableListState("buffered-elements");`
 
-After initializing the container, we check if we are recovering after failure using the `isRestored()` method 
-of the context. If this is `true`, *i.e.* we are recovering, the restore logic is applied.
+After initializing the container, we the use the `isRestored()` method 
+of the context to check if we are recovering after a failure. 
+If this is `true`, *i.e.* we are recovering, the restore logic is applied.
 
 As shown in the code of the modified `BufferingSink`, this `ListState` recovered during state 
-initialization is kept in a class variable for future use in the `snapshotState()`. There the `ListState` is cleared 
+initialization is kept in a class variable for future use in `snapshotState()`. There the `ListState` is cleared 
 of all objects included by the previous checkpoint, and is then filled with the new ones we want to checkpoint.
 
 As a side note, the keyed state can also be initialized in the `initializeState()` method. This can be done 
 using the `FunctionInitializationContext` given as argument, instead of the `RuntimeContext`, which is the case
-for Flink-1.1. If the `CheckpointedFunction` interface was to be used in the case of the `CountMapper`, 
+for Flink-1.1. If the `CheckpointedFunction` interface was to be used in the `CountMapper` example, 
 the old `open()` method could be removed and the new `snapshotState()` and `initializeState()` methods 
-would look like the following:
+would look like this:
 
     public class CountMapper extends RichFlatMapFunction<Tuple2<String, Integer>, Tuple2<String, Integer>> 
             implements CheckpointedFunction {
@@ -341,16 +343,16 @@ would look like the following:
         }
     }
 
-Notice that the `snaphotState()` method is empty as Flink itself takes care of snapshotting managed keyed state
+Notice that the `snapshotState()` method is empty as Flink itself takes care of snapshotting managed keyed state
 upon checkpointing.
 
 #### Backwards compatibility with Flink-1.1
 
-So far we have seen how to modify our functions to take advantage of the new features introduced be Flink-1.2. 
+So far we have seen how to modify our functions to take advantage of the new features introduced by Flink-1.2. 
 The question that remains is "Can I make sure that my modified (Flink-1.2) job will start from where my already 
 running job from Flink-1.1 stopped?".
 
-The answer is yes and the way to do it is pretty straightforward. For the keyed state, you have to do nothing.
+The answer is yes, and the way to do it is pretty straightforward. For the keyed state, you have to do nothing.
 Flink will take care of restoring the state from Flink-1.1. For the non-keyed state, your new function has to 
 implement the `CheckpointedRestoring` interface, as shown in the code above. This has a single method, the 
 familiar `restoreState()` from the old `Checkpointed` interface from Flink-1.1. As shown in the modified code of 
@@ -358,13 +360,13 @@ the `BufferingSink`, the `restoreState()` method is identical to its predecessor
 
 ### Aligned Processing Time Window Operators
 
-In Flink-1.1 and only when operating on *processing time* with no specified evictor or trigger, 
-the command `timeWindow()` on a keyed stream would instantiate a special type of `WindowOperator`, which could be 
+In Flink-1.1, and only when operating on *processing time* with no specified evictor or trigger, 
+the command `timeWindow()` on a keyed stream would instantiate a special type of `WindowOperator`. This could be 
 either an `AggregatingProcessingTimeWindowOperator` or an `AccumulatingProcessingTimeWindowOperator`. Both of 
-these operators are referred to as *aligned* window operators as they assume their input elements to arrive in
-order. This is valid when operating in processing time, as elements get as a timestamp the wall-clock time at 
-the moment they arrive to the window operator. These operators were strictly using the memory state backend and 
-had optimized data structures to keep the per-window elements which leveraged the in-order input element arrival.
+these operators are referred to as *aligned* window operators as they assume their input elements arrive in
+order. This is a valid assumption when operating in processing time, as elements get as their timestamp the wall-clock time at 
+the moment they arrive at the window operator. These operators were restricted to using the memory state backend, and 
+had optimized data structures for storing the per-window elements which leveraged the in-order input element arrival.
 
 In Flink-1.2, the aligned window operators are deprecated, and all windowing operations go through the generic 
 `WindowOperator`. This migration requires no change in the code of your Flink-1.1 job, as Flink will transparently 
@@ -372,8 +374,8 @@ read the state stored by the aligned window operators in your Flink-1.1 savepoin
 that is compatible with the generic `WindowOperator`, and resume execution using the generic `WindowOperator`.
 
 <span class="label label-info">Note</span> Although deprecated, you can still use the aligned window operators 
-in Flink-1.2 through special `WindowAssigners` introduced exactly for this reason. These assigners are the 
-`SlidingAlignedProcessingTimeWindows` and the `TumblingAlignedProcessingTimeWindows`, for sliding and tumbling 
+in Flink-1.2 through special `WindowAssigners` introduced for exactly this purpose. These assigners are the 
+`SlidingAlignedProcessingTimeWindows` and the `TumblingAlignedProcessingTimeWindows` assigners, for sliding and tumbling 
 windows respectively. A Flink-1.2 job that uses aligned windowing has to be a new job, as there is no way to 
 resume execution from a Flink-1.1 savepoint while using these operators.
 
