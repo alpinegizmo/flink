@@ -34,6 +34,7 @@ import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
 import org.apache.flink.api.common.state.StateDescriptor;
+import org.apache.flink.api.common.state.TemporalListState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.metrics.MetricGroup;
@@ -195,6 +196,12 @@ public class StreamingRuntimeContext extends AbstractRuntimeUDFContext {
 		KeyedStateStore keyedStateStore = checkPreconditionsAndGetKeyedStateStore(stateProperties);
 		stateProperties.initializeSerializerUnlessSet(getExecutionConfig());
 		return keyedStateStore.getListState(stateProperties);
+	}
+
+	public <T> TemporalListState<T> getTemporalListState(ListStateDescriptor<T> stateProperties) {
+		KeyedStateStore keyedStateStore = checkPreconditionsAndGetKeyedStateStore(stateProperties);
+		stateProperties.initializeSerializerUnlessSet(getExecutionConfig());
+		return keyedStateStore.getTemporalListState(stateProperties);
 	}
 
 	@Override

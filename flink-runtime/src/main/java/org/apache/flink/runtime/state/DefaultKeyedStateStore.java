@@ -33,6 +33,7 @@ import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
 import org.apache.flink.api.common.state.State;
 import org.apache.flink.api.common.state.StateDescriptor;
+import org.apache.flink.api.common.state.TemporalListState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.util.Preconditions;
@@ -70,6 +71,17 @@ public class DefaultKeyedStateStore implements KeyedStateStore {
 			stateProperties.initializeSerializerUnlessSet(executionConfig);
 			ListState<T> originalState = getPartitionedState(stateProperties);
 			return new UserFacingListState<>(originalState);
+		} catch (Exception e) {
+			throw new RuntimeException("Error while getting state", e);
+		}
+	}
+
+	public <T> TemporalListState<T> getTemporalListState(ListStateDescriptor<T> stateProperties) {
+		requireNonNull(stateProperties, "The state properties must not be null");
+		try {
+			stateProperties.initializeSerializerUnlessSet(executionConfig);
+			ListState<T> originalState = getPartitionedState(stateProperties);
+			return new UserFacingTemporalListState<>(originalState);
 		} catch (Exception e) {
 			throw new RuntimeException("Error while getting state", e);
 		}

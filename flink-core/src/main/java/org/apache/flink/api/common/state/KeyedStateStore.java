@@ -117,6 +117,9 @@ public interface KeyedStateStore {
 	@PublicEvolving
 	<T> ListState<T> getListState(ListStateDescriptor<T> stateProperties);
 
+	@PublicEvolving
+	<T> TemporalListState<T> getTemporalListState(ListStateDescriptor<T> stateProperties);
+
 	/**
 	 * Gets a handle to the system's key/value reducing state. This state is similar to the state
 	 * accessed via {@link #getState(ValueStateDescriptor)}, but is optimized for state that

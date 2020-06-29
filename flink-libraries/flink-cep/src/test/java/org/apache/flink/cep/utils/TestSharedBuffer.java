@@ -29,6 +29,7 @@ import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
+import org.apache.flink.api.common.state.TemporalListState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
@@ -110,6 +111,11 @@ public class TestSharedBuffer<V> extends SharedBuffer<V> {
 
 		@Override
 		public <T> ListState<T> getListState(ListStateDescriptor<T> stateProperties) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public <T> TemporalListState<T> getTemporalListState(ListStateDescriptor<T> stateProperties) {
 			throw new UnsupportedOperationException();
 		}
 

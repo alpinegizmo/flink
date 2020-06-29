@@ -30,7 +30,7 @@ import java.util.List;
  */
 class UserFacingListState<T> implements ListState<T> {
 
-	private final ListState<T> originalState;
+	protected final ListState<T> originalState;
 
 	private final Iterable<T> emptyState = Collections.emptyList();
 
