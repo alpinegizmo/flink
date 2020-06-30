@@ -36,6 +36,7 @@ import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
+import org.apache.flink.api.common.state.TemporalValueState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.metrics.MetricGroup;
@@ -284,6 +285,15 @@ public interface RuntimeContext {
 	 */
 	@PublicEvolving
 	<T> ValueState<T> getState(ValueStateDescriptor<T> stateProperties);
+
+	/**
+	 *
+	 * @param stateProperties The descriptor defining the properties of the stats.
+	 * @param <T> The type of value stored in the state.
+	 * @return
+	 */
+	@PublicEvolving
+	<T> TemporalValueState<T> getTemporalState(ValueStateDescriptor<T> stateProperties);
 
 	/**
 	 * Gets a handle to the system's key/value list state. This state is similar to the state

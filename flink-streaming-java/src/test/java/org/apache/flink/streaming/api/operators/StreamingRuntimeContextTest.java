@@ -107,6 +107,26 @@ public class StreamingRuntimeContextTest {
 	}
 
 	@Test
+	public void testTemporalValueStateInstantiation() throws Exception {
+
+		final ExecutionConfig config = new ExecutionConfig();
+		config.registerKryoType(Path.class);
+
+		final AtomicReference<Object> descriptorCapture = new AtomicReference<>();
+
+		StreamingRuntimeContext context = createRuntimeContext(descriptorCapture, config);
+		ValueStateDescriptor<TaskInfo> descr = new ValueStateDescriptor<>("name", TaskInfo.class);
+		context.getTemporalState(descr);
+
+		StateDescriptor<?, ?> descrIntercepted = (StateDescriptor<?, ?>) descriptorCapture.get();
+		TypeSerializer<?> serializer = descrIntercepted.getSerializer();
+
+		// check that the Path class is really registered, i.e., the execution config was applied
+		assertTrue(serializer instanceof KryoSerializer);
+		assertTrue(((KryoSerializer<?>) serializer).getKryo().getRegistration(Path.class).getId() > 0);
+	}
+
+	@Test
 	public void testReducingStateInstantiation() throws Exception {
 
 		final ExecutionConfig config = new ExecutionConfig();
