@@ -214,6 +214,30 @@ public class StreamingRuntimeContextTest {
 	}
 
 	@Test
+    public void testTemporalListStateInstantiation() throws Exception {
+
+		final ExecutionConfig config = new ExecutionConfig();
+		config.registerKryoType(Path.class);
+
+		final AtomicReference<Object> descriptorCapture = new AtomicReference<>();
+
+		StreamingRuntimeContext context = createRuntimeContext(descriptorCapture, config);
+
+		ListStateDescriptor<TaskInfo> descr = new ListStateDescriptor<>("name", TaskInfo.class);
+		context.getTemporalListState(descr);
+
+		ListStateDescriptor<?> descrIntercepted = (ListStateDescriptor<?>) descriptorCapture.get();
+		TypeSerializer<?> serializer = descrIntercepted.getSerializer();
+
+		// check that the Path class is really registered, i.e., the execution config was applied
+		assertTrue(serializer instanceof ListSerializer);
+
+		TypeSerializer<?> elementSerializer = descrIntercepted.getElementSerializer();
+		assertTrue(elementSerializer instanceof KryoSerializer);
+		assertTrue(((KryoSerializer<?>) elementSerializer).getKryo().getRegistration(Path.class).getId() > 0);
+	}
+
+	@Test
 	public void testMapStateInstantiation() throws Exception {
 
 		final ExecutionConfig config = new ExecutionConfig();
