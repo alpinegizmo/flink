@@ -36,6 +36,8 @@ import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.TemporalListState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.common.typeutils.base.LongSerializer;
 import org.apache.flink.util.Preconditions;
 
 import static java.util.Objects.requireNonNull;
@@ -80,7 +82,7 @@ public class DefaultKeyedStateStore implements KeyedStateStore {
 		requireNonNull(stateProperties, "The state properties must not be null");
 		try {
 			stateProperties.initializeSerializerUnlessSet(executionConfig);
-			ListState<T> originalState = getPartitionedState(stateProperties);
+			ListState<T> originalState = getPartitionedState(stateProperties, -1L, LongSerializer.INSTANCE);
 			return new UserFacingTemporalListState<>(originalState);
 		} catch (Exception e) {
 			throw new RuntimeException("Error while getting state", e);
@@ -132,10 +134,21 @@ public class DefaultKeyedStateStore implements KeyedStateStore {
 		}
 	}
 
-	protected  <S extends State> S getPartitionedState(StateDescriptor<S, ?> stateDescriptor) throws Exception {
+	protected <S extends State> S getPartitionedState(StateDescriptor<S, ?> stateDescriptor)
+			throws Exception {
+		return getPartitionedState(stateDescriptor,
+			VoidNamespace.INSTANCE,
+			VoidNamespaceSerializer.INSTANCE);
+	}
+
+	protected <N, S extends State> S getPartitionedState(
+			StateDescriptor<S, ?> stateDescriptor,
+			N namespace,
+			TypeSerializer<N> namespaceSerializer)
+			throws Exception {
 		return keyedStateBackend.getPartitionedState(
-				VoidNamespace.INSTANCE,
-				VoidNamespaceSerializer.INSTANCE,
-				stateDescriptor);
+			namespace,
+			namespaceSerializer,
+			stateDescriptor);
 	}
 }
