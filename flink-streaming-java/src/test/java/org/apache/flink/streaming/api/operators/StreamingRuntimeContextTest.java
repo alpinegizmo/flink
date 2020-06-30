@@ -194,66 +194,6 @@ public class StreamingRuntimeContextTest {
 	}
 
 	@Test
-	public void testTemporalListStateInstantiation() throws Exception {
-
-		final ExecutionConfig config = new ExecutionConfig();
-		config.registerKryoType(Path.class);
-
-		final AtomicReference<Object> descriptorCapture = new AtomicReference<>();
-
-		StreamingRuntimeContext context = createRuntimeContext(descriptorCapture, config);
-
-		ListStateDescriptor<TaskInfo> descr = new ListStateDescriptor<>("name", TaskInfo.class);
-		context.getTemporalListState(descr);
-
-		ListStateDescriptor<?> descrIntercepted = (ListStateDescriptor<?>) descriptorCapture.get();
-		TypeSerializer<?> serializer = descrIntercepted.getSerializer();
-
-		// check that the Path class is really registered, i.e., the execution config was applied
-		assertTrue(serializer instanceof ListSerializer);
-
-		TypeSerializer<?> elementSerializer = descrIntercepted.getElementSerializer();
-		assertTrue(elementSerializer instanceof KryoSerializer);
-		assertTrue(((KryoSerializer<?>) elementSerializer).getKryo().getRegistration(Path.class).getId() > 0);
-	}
-
-	@Test
-	public void testTemporalListStateReturnsEmptyListByDefault() throws Exception {
-		StreamingRuntimeContext context = createRuntimeContext();
-
-		ListStateDescriptor<String> descr = new ListStateDescriptor<>("name", String.class);
-		TemporalListState<String> state = context.getTemporalListState(descr);
-
-		Iterable<String> value = state.get();
-		assertNotNull(value);
-		assertFalse(value.iterator().hasNext());
-	}
-
-	@Test
-	public void testTemporalListStateUsesTimeAsNamespace() throws Exception {
-		StreamingRuntimeContext context = createRuntimeContext();
-
-		ListStateDescriptor<String> descr = new ListStateDescriptor<>("name", String.class);
-		TemporalListState<String> state = context.getTemporalListState(descr);
-
-		state.setTime(0L);
-		state.add("hello");
-		Iterable<String> value0 = state.get();
-		assertTrue(value0.iterator().hasNext());
-		assertEquals("hello", value0.iterator().next());
-
-		state.setTime(1L);
-		Iterable<String> value1 = state.get();
-		assertNotNull(value1);
-		assertFalse(value1.iterator().hasNext());
-
-		state.setTime(0L);
-		value0 = state.get();
-		assertTrue(value0.iterator().hasNext());
-		assertEquals("hello", value0.iterator().next());
-	}
-
-	@Test
 	public void testMapStateInstantiation() throws Exception {
 
 		final ExecutionConfig config = new ExecutionConfig();

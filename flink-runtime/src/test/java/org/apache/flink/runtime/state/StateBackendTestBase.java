@@ -38,6 +38,7 @@ import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
 import org.apache.flink.api.common.state.StateDescriptor;
 import org.apache.flink.api.common.state.StateTtlConfig;
+import org.apache.flink.api.common.state.TemporalListState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.time.Time;
@@ -1774,6 +1775,38 @@ public abstract class StateBackendTestBase<B extends AbstractStateBackend> exten
 			keyedBackend.close();
 			keyedBackend.dispose();
 		}
+	}
+
+	@Test
+    @SuppressWarnings("unchecked")
+    public void testTemporalListState() throws Exception {
+
+		AbstractKeyedStateBackend<String> keyedBackend = createKeyedBackend(StringSerializer.INSTANCE);
+		final ListStateDescriptor<String> stateDescr = new ListStateDescriptor<>("my-state", String.class);
+
+		DefaultKeyedStateStore store = new DefaultKeyedStateStore(keyedBackend, env.getExecutionConfig());
+		TemporalListState<String> tstate = store.getTemporalListState(stateDescr);
+
+		keyedBackend.setCurrentKey("abc");
+
+		tstate.setTime(0L);
+		tstate.add("hello");
+		Iterable<String> value0 = tstate.get();
+		assertTrue(value0.iterator().hasNext());
+		assertEquals("hello", value0.iterator().next());
+
+		tstate.setTime(1L);
+		Iterable<String> value1 = tstate.get();
+		assertNotNull(value1);
+		assertFalse(value1.iterator().hasNext());
+
+		tstate.setTime(0L);
+		value0 = tstate.get();
+		assertTrue(value0.iterator().hasNext());
+		assertEquals("hello", value0.iterator().next());
+
+		keyedBackend.close();
+		keyedBackend.dispose();
 	}
 
 	@Test
