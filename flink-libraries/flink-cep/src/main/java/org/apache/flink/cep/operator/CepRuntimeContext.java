@@ -37,6 +37,7 @@ import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
+import org.apache.flink.api.common.state.TemporalListState;
 import org.apache.flink.api.common.state.TemporalValueState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -195,7 +196,7 @@ class CepRuntimeContext implements RuntimeContext {
 	}
 
 	@Override
-	public <T> ListState<T> getTemporalListState(final ListStateDescriptor<T> stateProperties) {
+	public <T> TemporalListState<T> getTemporalListState(final ListStateDescriptor<T> stateProperties) {
 		throw new UnsupportedOperationException("State is not supported.");
 	}
 

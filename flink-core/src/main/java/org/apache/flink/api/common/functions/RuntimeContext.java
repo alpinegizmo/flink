@@ -36,6 +36,7 @@ import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
+import org.apache.flink.api.common.state.TemporalListState;
 import org.apache.flink.api.common.state.TemporalValueState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -287,6 +288,10 @@ public interface RuntimeContext {
 	<T> ValueState<T> getState(ValueStateDescriptor<T> stateProperties);
 
 	/**
+	 * Gets a handle to the system's temporal key/value state. This is a variant of the
+	 * standard key/value state where accesses are scoped not only to the key of the element
+	 * currently being processed by the function, but also to the namespace established by
+	 * calling {@link TemporalValueState<T>#setTime(long)}.
 	 *
 	 * @param stateProperties The descriptor defining the properties of the stats.
 	 * @param <T> The type of value stored in the state.
@@ -340,13 +345,17 @@ public interface RuntimeContext {
 	<T> ListState<T> getListState(ListStateDescriptor<T> stateProperties);
 
 	/**
+	 * Gets a handle to the system's temporal key/value list state. This is a variant of the
+	 * standard key/value list state where accesses are scoped not only to the key of the element
+	 * currently being processed by the function, but also to the namespace established by
+	 * calling {@link TemporalListState<T>#setTime(long)}.
 	 *
 	 * @param stateProperties The descriptor defining the properties of the stats.
 	 * @param <T> The type of value stored in the state.
 	 * @return
 	 */
 	@PublicEvolving
-	<T> ListState<T> getTemporalListState(ListStateDescriptor<T> stateProperties);
+	<T> TemporalListState<T> getTemporalListState(ListStateDescriptor<T> stateProperties);
 
 	/**
 	 * Gets a handle to the system's key/value reducing state. This state is similar to the state
