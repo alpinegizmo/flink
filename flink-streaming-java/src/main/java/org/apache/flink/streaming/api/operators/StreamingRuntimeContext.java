@@ -198,6 +198,7 @@ public class StreamingRuntimeContext extends AbstractRuntimeUDFContext {
 		return keyedStateStore.getListState(stateProperties);
 	}
 
+	@Override
 	public <T> TemporalListState<T> getTemporalListState(ListStateDescriptor<T> stateProperties) {
 		KeyedStateStore keyedStateStore = checkPreconditionsAndGetKeyedStateStore(stateProperties);
 		stateProperties.initializeSerializerUnlessSet(getExecutionConfig());

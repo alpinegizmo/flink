@@ -330,6 +330,15 @@ public interface RuntimeContext {
 	<T> ListState<T> getListState(ListStateDescriptor<T> stateProperties);
 
 	/**
+	 *
+	 * @param stateProperties The descriptor defining the properties of the stats.
+	 * @param <T> The type of value stored in the state.
+	 * @return
+	 */
+	@PublicEvolving
+	<T> ListState<T> getTemporalListState(ListStateDescriptor<T> stateProperties);
+
+	/**
 	 * Gets a handle to the system's key/value reducing state. This state is similar to the state
 	 * accessed via {@link #getState(ValueStateDescriptor)}, but is optimized for state that
 	 * aggregates values.

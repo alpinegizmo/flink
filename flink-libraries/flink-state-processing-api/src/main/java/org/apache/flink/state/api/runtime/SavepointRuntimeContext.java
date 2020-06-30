@@ -39,6 +39,7 @@ import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
 import org.apache.flink.api.common.state.StateDescriptor;
+import org.apache.flink.api.common.state.TemporalListState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.metrics.MetricGroup;
@@ -205,6 +206,16 @@ public final class SavepointRuntimeContext implements RuntimeContext {
 
 		registeredDescriptors.add(stateProperties);
 		return keyedStateStore.getListState(stateProperties);
+	}
+
+	@Override
+	public <T> TemporalListState<T> getTemporalListState(ListStateDescriptor<T> stateProperties) {
+		if (!stateRegistrationAllowed) {
+			throw new RuntimeException(REGISTRATION_EXCEPTION_MSG);
+		}
+
+		registeredDescriptors.add(stateProperties);
+		return keyedStateStore.getTemporalListState(stateProperties);
 	}
 
 	@Override

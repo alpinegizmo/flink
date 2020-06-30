@@ -189,6 +189,11 @@ class CepRuntimeContext implements RuntimeContext {
 	}
 
 	@Override
+	public <T> ListState<T> getTemporalListState(final ListStateDescriptor<T> stateProperties) {
+		throw new UnsupportedOperationException("State is not supported.");
+	}
+
+	@Override
 	public <T> ReducingState<T> getReducingState(final ReducingStateDescriptor<T> stateProperties) {
 		throw new UnsupportedOperationException("State is not supported.");
 	}
