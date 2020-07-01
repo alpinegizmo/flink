@@ -22,15 +22,50 @@ import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.TemporalListState;
 import org.apache.flink.runtime.state.internal.InternalListState;
 
-class UserFacingTemporalListState<T> extends UserFacingListState<T> implements TemporalListState<T> {
+import java.util.Collections;
+import java.util.List;
+
+class UserFacingTemporalListState<T> implements TemporalListState<T> {
+
+	protected final ListState<T> originalState;
+	protected final InternalListState internalState;
+
+	private final Iterable<T> emptyState = Collections.emptyList();
 
 	UserFacingTemporalListState(ListState<T> originalState) {
-		super(originalState);
+
+		this.originalState = originalState;
+		this.internalState = (InternalListState) originalState;
 	}
 
 	@Override
-	public void setTime(long time) {
-		InternalListState internalState = (InternalListState) originalState;
+	public Iterable<T> get(long time) throws Exception {
 		internalState.setCurrentNamespace(time);
+		Iterable<T> original = originalState.get();
+		return original != null ? original : emptyState;
+	}
+
+	@Override
+	public void add(long time, T value) throws Exception {
+		internalState.setCurrentNamespace(time);
+		originalState.add(value);
+	}
+
+	@Override
+	public void update(long time, List<T> values) throws Exception {
+		internalState.setCurrentNamespace(time);
+		originalState.update(values);
+	}
+
+	@Override
+	public void addAll(long time, List<T> values) throws Exception {
+		internalState.setCurrentNamespace(time);
+		originalState.addAll(values);
+	}
+
+	@Override
+	public void clear(long time) {
+		internalState.setCurrentNamespace(time);
+		originalState.clear();
 	}
 }

@@ -1779,67 +1779,6 @@ public abstract class StateBackendTestBase<B extends AbstractStateBackend> exten
 	}
 
 	@Test
-    @SuppressWarnings("unchecked")
-    public void testTemporalListState() throws Exception {
-
-		AbstractKeyedStateBackend<String> keyedBackend = createKeyedBackend(StringSerializer.INSTANCE);
-		final ListStateDescriptor<String> stateDescr = new ListStateDescriptor<>("my-state", String.class);
-
-		DefaultKeyedStateStore store = new DefaultKeyedStateStore(keyedBackend, env.getExecutionConfig());
-		TemporalListState<String> tstate = store.getTemporalListState(stateDescr);
-
-		keyedBackend.setCurrentKey("abc");
-
-		tstate.setTime(0L);
-		tstate.add("hello");
-		Iterable<String> value0 = tstate.get();
-		assertTrue(value0.iterator().hasNext());
-		assertEquals("hello", value0.iterator().next());
-
-		tstate.setTime(1L);
-		Iterable<String> value1 = tstate.get();
-		assertNotNull(value1);
-		assertFalse(value1.iterator().hasNext());
-
-		tstate.setTime(0L);
-		value0 = tstate.get();
-		assertTrue(value0.iterator().hasNext());
-		assertEquals("hello", value0.iterator().next());
-
-		keyedBackend.close();
-		keyedBackend.dispose();
-	}
-
-	@Test
-	@SuppressWarnings("unchecked")
-	public void testTemporalValueState() throws Exception {
-
-		AbstractKeyedStateBackend<String> keyedBackend = createKeyedBackend(StringSerializer.INSTANCE);
-		final ValueStateDescriptor<String> stateDescr = new ValueStateDescriptor<>("my-state", String.class);
-
-		DefaultKeyedStateStore store = new DefaultKeyedStateStore(keyedBackend, env.getExecutionConfig());
-		TemporalValueState<String> tstate = store.getTemporalState(stateDescr);
-
-		keyedBackend.setCurrentKey("abc");
-
-		tstate.setTime(0L);
-		tstate.update("hello");
-		String value0 = tstate.value();
-		assertEquals("hello", value0);
-
-		tstate.setTime(1L);
-		String value1 = tstate.value();
-		assertNull(value1);
-
-		tstate.setTime(0L);
-		value0 = tstate.value();
-		assertEquals("hello", value0);
-
-		keyedBackend.close();
-		keyedBackend.dispose();
-	}
-
-	@Test
 	@SuppressWarnings("unchecked")
 	public void testReducingState() throws Exception {
 		CheckpointStreamFactory streamFactory = createStreamFactory();
@@ -2797,6 +2736,70 @@ public abstract class StateBackendTestBase<B extends AbstractStateBackend> exten
 		} finally {
 			backend.dispose();
 		}
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testTemporalValueState() throws Exception {
+
+		AbstractKeyedStateBackend<String> keyedBackend = createKeyedBackend(StringSerializer.INSTANCE);
+		final ValueStateDescriptor<String> stateDescr = new ValueStateDescriptor<>("my-state", String.class);
+
+		DefaultKeyedStateStore store = new DefaultKeyedStateStore(keyedBackend, env.getExecutionConfig());
+		TemporalValueState<String> tstate = store.getTemporalState(stateDescr);
+
+		keyedBackend.setCurrentKey("abc");
+
+		tstate.update(0L, "hello");
+		String value0 = tstate.value(0L);
+		assertEquals("hello", value0);
+
+		String value1 = tstate.value(1L);
+		assertNull(value1);
+
+		tstate.update(1l, "world");
+		value1 = tstate.value(1L);
+		assertEquals("world", value1);
+
+		value0 = tstate.value(0L);
+		assertEquals("hello", value0);
+
+		keyedBackend.close();
+		keyedBackend.dispose();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void testTemporalListState() throws Exception {
+
+		AbstractKeyedStateBackend<String> keyedBackend = createKeyedBackend(StringSerializer.INSTANCE);
+		final ListStateDescriptor<String> stateDescr = new ListStateDescriptor<>("my-state", String.class);
+
+		DefaultKeyedStateStore store = new DefaultKeyedStateStore(keyedBackend, env.getExecutionConfig());
+		TemporalListState<String> tstate = store.getTemporalListState(stateDescr);
+
+		keyedBackend.setCurrentKey("abc");
+
+		tstate.add(0L,"hello");
+		Iterable<String> value0 = tstate.get(0L);
+		assertTrue(value0.iterator().hasNext());
+		assertEquals("hello", value0.iterator().next());
+
+		Iterable<String> value1 = tstate.get(1L);
+		assertNotNull(value1);
+		assertFalse(value1.iterator().hasNext());
+
+		tstate.add(1L,"world");
+		value1 = tstate.get(1L);
+		assertTrue(value1.iterator().hasNext());
+		assertEquals("world", value1.iterator().next());
+
+		value0 = tstate.get(0L);
+		assertTrue(value0.iterator().hasNext());
+		assertEquals("hello", value0.iterator().next());
+
+		keyedBackend.close();
+		keyedBackend.dispose();
 	}
 
 	/**

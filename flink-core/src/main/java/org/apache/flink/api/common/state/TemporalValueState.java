@@ -20,19 +20,38 @@ package org.apache.flink.api.common.state;
 
 import org.apache.flink.annotation.PublicEvolving;
 
+import java.io.IOException;
+
 /**
  * An extension of the {@link ListState} interface that exposes the namespace in a limited way.
  *
  * @param <T> Type of values that this temporal list state keeps.
  */
 @PublicEvolving
-public interface TemporalValueState<T> extends ValueState<T> {
+public interface TemporalValueState<T> extends TemporalState {
 
 	/**
-	 * Updates the namespace used in all accesses and updates to the list. Must be called before
-	 * using {@link #value()}, {@link #update(T value)}, or {@link #clear()}.
+	 * Returns the current value for the state associated with the specified time.
 	 *
-	 * @param time The time to be used as the namespace for subsequent operations.
+	 * <p>If you didn't specify a default value when creating the {@link ValueStateDescriptor}
+	 * this will return {@code null} when to value was previously set using {@link #update(long, Object)}.
+	 *
+	 * @return The state value corresponding to the current input.
+	 *
+	 * @throws IOException Thrown if the system cannot access the state.
 	 */
-	void setTime(long time);
+	T value(long time) throws IOException;
+
+	/**
+	 * Updates the operator state accessible by {@link #value(long)} to the given
+	 * value. The next time {@link #value(long)} is called (for the same state
+	 * partition) the returned state will represent the updated value. When a
+	 * partitioned state is updated with null, the state for the current key
+	 * will be removed and the default value is returned on the next access.
+	 *
+	 * @param value The new value for the state.
+	 *
+	 * @throws IOException Thrown if the system cannot access the state.
+	 */
+	void update(long time, T value) throws IOException;
 }

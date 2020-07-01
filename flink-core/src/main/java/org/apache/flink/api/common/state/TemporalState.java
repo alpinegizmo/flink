@@ -20,21 +20,15 @@ package org.apache.flink.api.common.state;
 
 import org.apache.flink.annotation.PublicEvolving;
 
-import java.util.List;
-
 /**
- * An extension of the {@link ListState} interface that exposes the namespace in a limited way.
+ * Interface that different types of partitioned temporal state must implement.
  *
- * @param <T> Type of values that this temporal list state keeps.
  */
 @PublicEvolving
-public interface TemporalListState<T> extends TemporalState {
+public interface TemporalState {
 
-	void update(long time, List<T> values) throws Exception;
-
-	void addAll(long time, List<T> values) throws Exception;
-
-	Iterable<T> get(long time) throws Exception;
-
-	void add(long time, T value) throws Exception;
+	/**
+	 * Removes the value mapped for the specified time under the current key.
+	 */
+	void clear(long time);
 }

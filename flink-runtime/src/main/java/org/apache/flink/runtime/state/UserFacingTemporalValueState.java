@@ -29,32 +29,31 @@ import java.io.IOException;
  *
  * @param <T> The type of elements in the state.
  */
-public class UserFacingTemporalValueState<T> implements ValueState<T>, TemporalValueState<T> {
+public class UserFacingTemporalValueState<T> implements TemporalValueState<T> {
 
 	protected final ValueState<T> originalState;
+	protected final InternalValueState internalState;
 
 	UserFacingTemporalValueState(ValueState<T> originalState) {
 		this.originalState = originalState;
+		this.internalState = (InternalValueState) originalState;
 	}
 
 	@Override
-	public void setTime(long time) {
-		InternalValueState internalState = (InternalValueState) originalState;
+	public T value(long time) throws IOException {
 		internalState.setCurrentNamespace(time);
-	}
-
-	@Override
-	public T value() throws IOException {
 		return originalState.value();
 	}
 
 	@Override
-	public void update(T value) throws IOException {
+	public void update(long time, T value) throws IOException {
+		internalState.setCurrentNamespace(time);
 		originalState.update(value);
 	}
 
 	@Override
-	public void clear() {
+	public void clear(long time) {
+		internalState.setCurrentNamespace(time);
 		originalState.clear();
 	}
 }
